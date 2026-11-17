@@ -42,7 +42,7 @@
         .acc-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 8px; }
         .acc-price { font-size: 0.95rem; font-weight: bold; color: #beee11; }
 
-        /* MODAL FIX */
+        /* MODAL */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 999; justify-content: center; align-items: center; padding: 15px; }
         .modal.active { display: flex !important; }
         .modal-content { background: #1b2838; border: 1px solid var(--border-color); width: 100%; max-width: 400px; padding: 20px; border-radius: 4px; position: relative; }
@@ -84,7 +84,7 @@
             <span class="modal-close" onclick="closeModal('authModal')">&times;</span>
             <h3 id="modalTitle" style="color: white; margin-bottom: 12px;">Đăng Nhập</h3>
             <form id="authForm" onsubmit="handleAuth(event)">
-                <div class="form-group"><label>Tài khoản</label><input type="text" id="authUSer" required></div>
+                <div class="form-group"><label>Tài khoản</label><input type="text" id="authUser" required></div>
                 <div class="form-group"><label>Mật khẩu</label><input type="password" id="authPass" required></div>
                 <button type="submit" class="btn btn-steam" style="width: 100%; margin-top: 10px;" id="authSubmitBtn">Đăng Nhập</button>
             </form>
@@ -125,7 +125,7 @@
 
         function openAuthModal(mode) {
             isLoginMode = (mode === 'login');
-            document.getElementById('modalTitleinnerText = isLoginMode ? "Đăng Nhập" : "Đăng Ký";
+            document.getElementById('modalTitle').innerText = isLoginMode ? "Đăng Nhập" : "Đăng Ký";
             document.getElementById('authSubmitBtn').innerText = isLoginMode ? "Đăng Nhập" : "Đăng Ký Ngay";
             document.getElementById('switchText').innerText = isLoginMode ? "Chưa có tài khoản? Đăng ký ngay" : "Đã có tài khoản? Đăng nhập";
             document.getElementById('authModal').classList.add('active');
@@ -144,7 +144,7 @@
 
         async function handleAuth(e) {
             e.preventDefault();
-            const u = document.getElementById('authUSer').value.trim();
+            const u = document.getElementById('authUser').value.trim();
             const p = document.getElementById('authPass').value.trim();
 
             if (isLoginMode) {
