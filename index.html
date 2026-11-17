@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>STEAM STORE - MARKETPLACE</title>
+    <title>STEAM STORE - MARKETPLACE & ACCOUNTS</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
@@ -12,44 +12,61 @@
             --steam-card: #2a475e;
             --steam-accent: #66c0f4;
             --steam-green: #5c7e10;
+            --steam-green-hover: #789922;
             --text-main: #c7d5e0;
             --text-white: #ffffff;
             --border-color: #384959;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Motiva Sans", Arial, Helvetica, sans-serif; }
         body { background-color: var(--steam-bg); color: var(--text-main); line-height: 1.5; }
 
+        /* HEADER STEAM STYLE */
         header { background-color: var(--steam-dark); border-bottom: 1px solid #000; padding: 15px 0; position: sticky; top: 0; z-index: 100; }
         .nav-container { max-width: 1000px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; flex-wrap: wrap; gap: 10px; }
-        .logo { font-size: 1.3rem; font-weight: bold; color: var(--text-white); text-decoration: none; }
+        .logo { font-size: 1.3rem; font-weight: bold; color: var(--text-white); text-decoration: none; display: flex; align-items: center; gap: 8px; text-transform: uppercase; letter-spacing: 1px; }
         .logo span { color: var(--steam-accent); }
         .nav-links { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 
-        .btn { padding: 8px 14px; border: none; border-radius: 2px; font-weight: 600; cursor: pointer; font-size: 0.8rem; text-transform: uppercase; color: white; }
-        .btn-steam { background-color: var(--steam-green); }
+        .btn { padding: 8px 14px; border: none; border-radius: 2px; font-weight: 600; cursor: pointer; font-size: 0.8rem; text-transform: uppercase; transition: 0.2s; color: white; }
+        .btn-steam { background: linear-gradient(to bottom, #799905 5%, #537000 95%); background-color: var(--steam-green); }
+        .btn-steam:hover { background: linear-gradient(to bottom, #8fae1b 5%, #638500 95%); }
         .btn-blue { background-color: #2a475e; border: 1px solid var(--steam-accent); color: var(--steam-accent); }
+        .btn-blue:hover { background-color: var(--steam-accent); color: var(--steam-dark); }
         .btn-danger { background-color: #a32d2d; }
 
+        .user-panel { background: rgba(0,0,0,0.3); padding: 5px 10px; border-radius: 2px; font-size: 0.8rem; display: flex; align-items: center; gap: 8px; border: 1px solid var(--border-color); }
+        .balance { color: #a4d007; font-weight: bold; }
+
+        /* CONTAINER & GRID */
         .container { max-width: 1000px; margin: 25px auto; padding: 0 15px; }
-        .section-title { font-size: 1.1rem; color: var(--text-white); text-transform: uppercase; margin-bottom: 15px; border-bottom: 2px solid var(--border-color); padding-bottom: 5px; }
+        .section-title { font-size: 1.1rem; color: var(--text-white); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; border-bottom: 2px solid var(--border-color); padding-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
 
         .acc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; }
-        .acc-card { background-color: #16202d; border: 1px solid #000; border-radius: 4px; overflow: hidden; display: flex; flex-direction: column; }
+        .acc-card { background-color: #16202d; border: 1px solid #000; border-radius: 4px; overflow: hidden; transition: 0.2s; display: flex; flex-direction: column; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .acc-card:hover { transform: translateY(-3px); border-color: var(--steam-accent); }
         .acc-img { width: 100%; height: 130px; object-fit: cover; background: #000; }
         .acc-body { padding: 12px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
-        .acc-title { font-size: 0.95rem; font-weight: bold; color: var(--text-white); margin-bottom: 6px; }
+        .acc-title { font-size: 0.95rem; font-weight: bold; color: var(--text-white); margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .acc-desc { font-size: 0.75rem; color: #8f98a0; margin-bottom: 10px; }
         .acc-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 8px; }
         .acc-price { font-size: 0.95rem; font-weight: bold; color: #beee11; }
+
+        /* ADMIN PANEL */
+        .admin-panel { background-color: #16202d; border: 1px solid var(--steam-accent); padding: 15px; margin-bottom: 25px; border-radius: 4px; display: none; }
+        .form-group { margin-bottom: 10px; display: flex; flex-direction: column; gap: 4px; }
+        .form-group label { font-size: 0.8rem; color: #8f98a0; }
+        input, select, textarea { background-color: #316282; border: 1px solid #000; color: white; padding: 8px; border-radius: 2px; font-size: 0.85rem; outline: none; }
+        input:focus { border-color: var(--steam-accent); }
 
         /* MODAL */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 999; justify-content: center; align-items: center; padding: 15px; }
         .modal.active { display: flex !important; }
-        .modal-content { background: #1b2838; border: 1px solid var(--border-color); width: 100%; max-width: 400px; padding: 20px; border-radius: 4px; position: relative; }
+        .modal-content { background: #1b2838; border: 1px solid var(--border-color); width: 100%; max-width: 450px; padding: 20px; border-radius: 4px; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
         .modal-close { position: absolute; top: 10px; right: 15px; font-size: 1.2rem; cursor: pointer; color: #8f98a0; }
-        .form-group { margin-bottom: 10px; display: flex; flex-direction: column; gap: 4px; }
-        .form-group label { font-size: 0.8rem; color: #8f98a0; }
-        input { background-color: #316282; border: 1px solid #000; color: white; padding: 8px; border-radius: 2px; outline: none; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; }
+        .tab-btn { background: none; border: none; color: #8f98a0; font-weight: bold; cursor: pointer; font-size: 0.9rem; }
+        .tab-btn.active { color: var(--text-white); border-bottom: 2px solid var(--steam-accent); }
         .hidden { display: none !important; }
     </style>
 </head>
@@ -63,8 +80,13 @@
                     <button class="btn btn-blue" onclick="openAuthModal('login')">Đăng Nhập</button>
                     <button class="btn btn-steam" onclick="openAuthModal('register')">Đăng Ký</button>
                 </div>
-                <div id="userButtons" class="hidden" style="display: flex; align-items: center; gap: 6px;">
-                    <span id="displayUsername" style="color: #66c0f4; font-weight: bold;">User</span>
+                <div id="userButtons" class="hidden" style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                    <button id="adminToggleBtn" class="btn btn-blue hidden" onclick="toggleAdminPanel()">⚙️ Quản Trị</button>
+                    <button class="btn btn-blue" onclick="openHistoryModal()">📦 Lịch Sử</button>
+                    <button class="btn btn-steam" onclick="openTopupModal()">💳 Nạp Thẻ</button>
+                    <div class="user-panel">
+                        <span id="displayUsername">User</span> | <span class="balance" id="displayBalance">0đ</span>
+                    </div>
                     <button class="btn btn-danger" onclick="logout()">Thoát</button>
                 </div>
             </div>
@@ -72,23 +94,114 @@
     </header>
 
     <div class="container">
-        <div class="section-title">🔥 KHO TÀI KHOẢN STEAM</div>
-        <div class="acc-grid" id="accGrid">
-            <p style="color: #8f98a0;">Đang tải danh sách acc...</p>
+        <!-- BẢNG ADMIN ĐĂNG BÁN ACC & UPLOAD ẢNH TỪ MÁY -->
+        <div id="adminPanel" class="admin-panel">
+            <h3 style="color: var(--steam-accent); margin-bottom: 10px;">🛠️ ĐĂNG BÁN ACC STEAM & UPLOAD ẢNH</h3>
+            <form id="addAccForm" onsubmit="handleAddAcc(event)">
+                <div class="form-group">
+                    <label>Tiêu đề Acc (VD: CS2 Prime + 50 Games)</label>
+                    <input type="text" id="accTitle" required placeholder="Tên acc...">
+                </div>
+                <div class="form-group">
+                    <label>Giá bán (VNĐ)</label>
+                    <input type="number" id="accPrice" required placeholder="50000">
+                </div>
+                <div class="form-group">
+                    <label>Ảnh đại diện Acc (Chọn ảnh từ máy tính)</label>
+                    <input type="file" id="accImgFile" accept="image/*" required style="background:none; border:1px dashed var(--border-color); padding: 6px;">
+                </div>
+                <div class="form-group">
+                    <label>Mô tả ngắn</label>
+                    <input type="text" id="accDesc" required placeholder="Level Steam 10, không VAC...">
+                </div>
+                <div class="form-group">
+                    <label>Tài khoản Steam</label>
+                    <input type="text" id="accUser" required placeholder="Username Steam...">
+                </div>
+                <div class="form-group">
+                    <label>Mật khẩu Steam</label>
+                    <input type="text" id="accPass" required placeholder="Password Steam...">
+                </div>
+                <button type="submit" class="btn btn-steam" style="width: 100%; margin-top: 5px;">ĐĂNG BÁN LÊN KHO</button>
+            </form>
         </div>
+
+        <div class="section-title">
+            <span>🔥 KHO TÀI KHOẢN STEAM ĐANG BÁN</span>
+            <span id="accCount" style="font-size: 0.8rem; color: #8f98a0;">Đang tải...</span>
+        </div>
+
+        <div class="acc-grid" id="accGrid"></div>
     </div>
 
     <!-- MODAL AUTH -->
     <div class="modal" id="authModal">
         <div class="modal-content">
             <span class="modal-close" onclick="closeModal('authModal')">&times;</span>
-            <h3 id="modalTitle" style="color: white; margin-bottom: 12px;">Đăng Nhập</h3>
-            <form id="authForm" onsubmit="handleAuth(event)">
-                <div class="form-group"><label>Tài khoản</label><input type="text" id="authUser" required></div>
-                <div class="form-group"><label>Mật khẩu</label><input type="password" id="authPass" required></div>
-                <button type="submit" class="btn btn-steam" style="width: 100%; margin-top: 10px;" id="authSubmitBtn">Đăng Nhập</button>
+            <div class="tabs">
+                <button class="tab-btn active" id="tabLogin" onclick="switchAuthTab('login')">Đăng Nhập</button>
+                <button class="tab-btn" id="tabRegister" onclick="switchAuthTab('register')">Đăng Ký</button>
+            </div>
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group"><label>Tài khoản</label><input type="text" id="loginUser" required></div>
+                <div class="form-group"><label>Mật khẩu</label><input type="password" id="loginPass" required></div>
+                <button type="submit" class="btn btn-blue" style="width: 100%; margin-top: 10px;">Đăng Nhập</button>
             </form>
-            <p id="switchText" style="font-size: 0.8rem; color: #8f98a0; margin-top: 10px; text-align: center; cursor: pointer;" onclick="toggleAuthMode()">Chưa có tài khoản? Đăng ký ngay</p>
+            <form id="registerForm" class="hidden" onsubmit="handleRegister(event)">
+                <div class="form-group"><label>Tên tài khoản mới</label><input type="text" id="regUser" required></div>
+                <div class="form-group"><label>Mật khẩu</label><input type="password" id="regPass" required></div>
+                <button type="submit" class="btn btn-steam" style="width: 100%; margin-top: 10px;">Đăng Ký Ngay</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL NẠP THẺ CÀO (THESIEURE ID: 0051206261) -->
+    <div class="modal" id="topupModal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal('topupModal')">&times;</span>
+            <h3 style="color: var(--text-white); margin-bottom: 12px; font-size: 1rem;">💳 NẠP THẺ CÀO THESIEURE (ID: 0051206261)</h3>
+            <form onsubmit="handleTopup(event)">
+                <div class="form-group">
+                    <label>Nhà mạng</label>
+                    <select id="cardTelco" required>
+                        <option value="VIETTEL">Viettel</option>
+                        <option value="MOBIFONE">Mobifone</option>
+                        <option value="VINAPHONE">Vinaphone</option>
+                        <option value="ZING">Thẻ Zing</option>
+                        <option value="GATE">Thẻ Gate</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Mệnh giá</label>
+                    <select id="cardAmount" required>
+                        <option value="10000">10.000đ</option>
+                        <option value="20000">20.000đ</option>
+                        <option value="50000">50.000đ</option>
+                        <option value="100000">100.000đ</option>
+                        <option value="200000">200.000đ</option>
+                        <option value="500000">500.000đ</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Số Seri</label>
+                    <input type="text" id="cardSerial" required placeholder="Nhập seri thẻ...">
+                </div>
+                <div class="form-group">
+                    <label>Mã thẻ (PIN)</label>
+                    <input type="text" id="cardPin" required placeholder="Nhập mã pin thẻ...">
+                </div>
+                <button type="submit" class="btn btn-steam" style="width: 100%; margin-top: 10px;">GỬI THẺ NẠP</button>
+            </form>
+            <p style="font-size: 0.75rem; color: #8f98a0; margin-top: 10px; text-align: center;">Partner ID: <b>0051206261</b>. Thẻ sẽ được lưu log chờ duyệt tự động.</p>
+        </div>
+    </div>
+
+    <!-- MODAL LỊCH SỬ MUA ACC -->
+    <div class="modal" id="historyModal">
+        <div class="modal-content" style="max-width: 520px;">
+            <span class="modal-close" onclick="closeModal('historyModal')">&times;</span>
+            <h3 style="color: var(--steam-accent); margin-bottom: 12px; font-size: 1rem;">📦 LỊCH SỬ TÀI KHOẢN ĐÃ MUA</h3>
+            <div id="purchasedList" style="max-height: 350px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;"></div>
         </div>
     </div>
 
@@ -97,106 +210,158 @@
         const SUPABASE_KEY = 'sb_publishable_5h8MwoYcm93JNFqUoModUA_aucynQk6';
         const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let isLoginMode = true;
+        const THESIEURE_PARTNER_ID = '0051206261';
+        const ADMIN_USER = "hoanglong19523";
+        const ADMIN_PASS = "Long1510@";
+        
         let currentUser = JSON.parse(localStorage.getItem('steam_user')) || null;
+        if (currentUser && !currentUser.purchased) currentUser.purchased = [];
 
-        function init() {
+        async function init() {
             updateUI();
-            loadDummyAccounts();
+            await loadAccounts();
         }
 
-        function loadDummyAccounts() {
-            document.getElementById('accGrid').innerHTML = `
+        async function loadAccounts() {
+            const grid = document.getElementById('accGrid');
+            const { data: accounts, error } = await client.from('accounts').select('*').eq('sold', false);
+            
+            if (error) {
+                grid.innerHTML = `<p style="color: red; grid-column: 1/-1;">Lỗi tải dữ liệu: ${error.message}</p>`;
+                return;
+            }
+
+            document.getElementById('accCount').innerText = `${accounts.length} tài khoản`;
+            if (accounts.length === 0) {
+                grid.innerHTML = `<p style="color: #8f98a0; grid-column: 1/-1; text-align: center; padding: 30px;">Chưa có tài khoản Steam nào trên kệ!</p>`;
+                return;
+            }
+
+            grid.innerHTML = accounts.map(acc => `
                 <div class="acc-card">
-                    <img src="https://images.unsplash.com/photo-1550745165-9bc0b252726f" class="acc-img">
+                    <img src="${acc.img}" class="acc-img">
                     <div class="acc-body">
                         <div>
-                            <div class="acc-title">CS2 Prime + 10 Games</div>
-                            <div style="font-size: 0.75rem; color: #8f98a0;">Level 10, Không VAC</div>
+                            <div style="font-size: 0.7rem; color: #8f98a0; margin-bottom: 3px;">MÃ: #${acc.id}</div>
+                            <div class="acc-title">${acc.title}</div>
+                            <div class="acc-desc">${acc.desc}</div>
                         </div>
                         <div class="acc-footer">
-                            <div class="acc-price">50.000đ</div>
-                            <button class="btn btn-steam" onclick="alert('Đăng nhập để mua!')">Mua</button>
+                            <div class="acc-price">${formatMoney(acc.price)}</div>
+                            <button class="btn btn-steam" onclick="buyAcc(${acc.id}, ${acc.price})">Mua</button>
                         </div>
                     </div>
                 </div>
-            `;
+            `).join('');
         }
 
-        function openAuthModal(mode) {
-            isLoginMode = (mode === 'login');
-            document.getElementById('modalTitle').innerText = isLoginMode ? "Đăng Nhập" : "Đăng Ký";
-            document.getElementById('authSubmitBtn').innerText = isLoginMode ? "Đăng Nhập" : "Đăng Ký Ngay";
-            document.getElementById('switchText').innerText = isLoginMode ? "Chưa có tài khoản? Đăng ký ngay" : "Đã có tài khoản? Đăng nhập";
-            document.getElementById('authModal').classList.add('active');
-        }
-
-        function toggleAuthMode() {
-            isLoginMode = !isLoginMode;
-            document.getElementById('modalTitle').innerText = isLoginMode ? "Đăng Nhập" : "Đăng Ký";
-            document.getElementById('authSubmitBtn').innerText = isLoginMode ? "Đăng Nhập" : "Đăng Ký Ngay";
-            document.getElementById('switchText').innerText = isLoginMode ? "Chưa có tài khoản? Đăng ký ngay" : "Đã có tài khoản? Đăng nhập";
-        }
-
-        function closeModal(id) {
-            document.getElementById(id).classList.remove('active');
-        }
-
-        async function handleAuth(e) {
+        // ADMIN ĐĂNG BÁN ACC & UPLOAD ẢNH LÊN SUPABASE STORAGE
+        async function handleAddAcc(e) {
             e.preventDefault();
-            const u = document.getElementById('authUser').value.trim();
-            const p = document.getElementById('authPass').value.trim();
+            const fileInput = document.getElementById('accImgFile');
+            const file = fileInput.files[0];
+            if (!file) return alert("Vui lòng chọn ảnh từ máy tính!");
 
-            if (isLoginMode) {
-                if (u === "hoanglong19523" && p === "Long1510@") {
-                    currentUser = { id: u, username: u };
-                    localStorage.setItem('steam_user', JSON.stringify(currentUser));
-                    closeModal('authModal');
-                    updateUI();
-                    alert("Đăng nhập Admin thành công!");
-                    return;
-                }
+            const fileName = `acc_${Date.now()}_${file.name}`;
+            const { data: uploadData, error: uploadError } = await client.storage.from('shop-images').upload(fileName, file);
 
-                const { data, error } = await client.from('profiles').select('*').eq('id', u).eq('password', p).single();
-                if (error || !data) {
-                    alert("Sai tài khoản hoặc mật khẩu!");
-                    return;
-                }
-                currentUser = data;
+            if (uploadError) return alert("Lỗi upload ảnh: " + uploadError.message);
+
+            const { data: publicUrlData } = client.storage.from('shop-images').getPublicUrl(fileName);
+            const imageUrl = publicUrlData.publicUrl;
+
+            const newAcc = {
+                title: document.getElementById('accTitle').value,
+                price: parseInt(document.getElementById('accPrice').value),
+                img: imageUrl,
+                desc: document.getElementById('accDesc').value,
+                username_acc: document.getElementById('accUser').value,
+                password_acc: document.getElementById('accPass').value,
+                sold: false
+            };
+
+            const { error: insertError } = await client.from('accounts').insert([newAcc]);
+            if (insertError) return alert("Lỗi lưu acc vào database: " + insertError.message);
+
+            document.getElementById('addAccForm').reset();
+            alert("Đăng acc Steam thành công!");
+            loadAccounts();
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const u = document.getElementById('loginUser').value.trim();
+            const p = document.getElementById('loginPass').value.trim();
+
+            if (u === ADMIN_USER && p === ADMIN_PASS) {
+                currentUser = { id: u, username: u, balance: 999999, is_admin: true, purchased: [] };
                 localStorage.setItem('steam_user', JSON.stringify(currentUser));
                 closeModal('authModal');
                 updateUI();
-                alert("Đăng nhập thành công!");
-            } else {
-                const { error } = await client.from('profiles').insert([{ id: u, password: p, balance: 0 }]);
-                if (error) {
-                    alert("Tài khoản đã tồn tại hoặc lỗi kết nối!");
-                    return;
-                }
-                alert("Đăng ký thành công! Hãy đăng nhập.");
-                isLoginMode = true;
-                openAuthModal('login');
+                alert("Đăng nhập Admin thành công!");
+                return;
             }
+
+            const { data, error } = await client.from('profiles').select('*').eq('id', u).eq('password', p).single();
+            if (error || !data) return alert("Sai tài khoản hoặc mật khẩu!");
+
+            currentUser = data;
+            if (!currentUser.purchased) currentUser.purchased = [];
+            localStorage.setItem('steam_user', JSON.stringify(currentUser));
+            closeModal('authModal');
+            updateUI();
+            alert("Đăng nhập thành công!");
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            const u = document.getElementById('regUser').value.trim();
+            const p = document.getElementById('regPass').value.trim();
+
+            const { error } = await client.from('profiles').insert([{ id: u, password: p, balance: 0, is_admin: false }]);
+            if (error) return alert("Tài khoản đã tồn tại!");
+
+            alert("Đăng ký thành công! Hãy đăng nhập.");
+            switchAuthTab('login');
         }
 
         function logout() {
             currentUser = null;
             localStorage.removeItem('steam_user');
             updateUI();
+            loadAccounts();
         }
 
-        function updateUI() {
-            if (currentUser) {
-                document.getElementById('guestButtons').classList.add('hidden');
-                document.getElementById('userButtons').classList.remove('hidden');
-                document.getElementById('displayUsername').innerText = currentUser.username || currentUser.id;
-            } else {
-                document.getElementById('guestButtons').classList.remove('hidden');
-                document.getElementById('userButtons').classList.add('hidden');
+        async function buyAcc(id, price) {
+            if (!currentUser) {
+                alert("Vui lòng đăng nhập để mua tài khoản!");
+                openAuthModal('login');
+                return;
             }
-        }
 
-        init();
-    </script>
-</body>
-</html>
+            const { data: userDb } = await client.from('profiles').select('balance').eq('id', currentUser.id).single();
+            const currentBal = currentUser.is_admin ? 999999 : (userDb ? userDb.balance : currentUser.balance);
+
+            if (currentBal < price) {
+                alert("Số dư không đủ! Vui lòng nạp thêm thẻ.");
+                openTopupModal();
+                return;
+            }
+
+            if (!confirm("Xác nhận mua tài khoản này?")) return;
+
+            if (!currentUser.is_admin) {
+                await client.from('profiles').update({ balance: currentBal - price }).eq('id', currentUser.id);
+                currentUser.balance = currentBal - price;
+            }
+
+            const { data: accData } = await client.from('accounts').update({ sold: true }).eq('id', id).select().single();
+            
+            if (!currentUser.purchased) currentUser.purchased = [];
+            currentUser.purchased.unshift({
+                id: accData.id,
+                title: accData.title,
+                user: accData.username_acc,
+                pass: accData.password_acc,
+                price: accData.price,
+                time: new Date().toLocaleS
