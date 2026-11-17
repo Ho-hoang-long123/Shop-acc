@@ -128,7 +128,10 @@
 
         <div class="section-title">
             <span>🔥 KHO TÀI KHOẢN STEAM ĐANG BÁN</span>
-            <span id="accCount" style="font-size: 0.8rem; color: #8f98a0;">Đang tải...</span>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <button class="btn btn-blue" onclick="loadAccounts()" style="font-size: 0.7rem; padding: 4px 8px;">🔄 Làm mới</button>
+                <span id="accCount" style="font-size: 0.8rem; color: #8f98a0;">Đang tải...</span>
+            </div>
         </div>
 
         <div class="acc-grid" id="accGrid"></div>
@@ -216,13 +219,22 @@
         let currentUser = JSON.parse(localStorage.getItem('steam_user')) || null;
         if (currentUser && !currentUser.purchased) currentUser.purchased = [];
 
+        document.addEventListener("DOMContentLoaded", () => {
+            init();
+        });
+
         async function init() {
             updateUI();
             await loadAccounts();
         }
 
+        // HÀM LOAD LẠI DANH SÁCH TÀI KHOẢN TỪ SUPABASE
         async function loadAccounts() {
             const grid = document.getElementById('accGrid');
+            if (!grid) return;
+            
+            grid.innerHTML = `<p style="color: #66c0f4; grid-column: 1/-1; text-align: center; padding: 20px;">Đang làm mới danh sách acc...</p>`;
+
             const { data: accounts, error } = await client.from('accounts').select('*').eq('sold', false);
             
             if (error) {
@@ -254,6 +266,7 @@
             `).join('');
         }
 
+        // ADMIN ĐĂNG ACC & TỰ ĐỘNG LOAD LẠI GIAO DIỆN
         async function handleAddAcc(e) {
             e.preventDefault();
             const fileInput = document.getElementById('accImgFile');
@@ -283,7 +296,9 @@
 
             document.getElementById('addAccForm').reset();
             alert("Đăng acc Steam thành công!");
-            loadAccounts();
+            
+            // TỰ ĐỘNG LOAD LẠI KHO ACC NGAY LẬP TỨC
+            await loadAccounts();
         }
 
         async function handleLogin(e) {
@@ -330,6 +345,7 @@
             loadAccounts();
         }
 
+        // MUA ACC & TỰ ĐỘNG LOAD LẠI KHO ĐỂ ẨN ACC ĐÃ BÁN
         async function buyAcc(id, price) {
             if (!currentUser) {
                 alert("Vui lòng đăng nhập để mua tài khoản!");
@@ -348,21 +364,4 @@
 
             if (!confirm("Xác nhận mua tài khoản này?")) return;
 
-            if (!currentUser.is_admin) {
-                await client.from('profiles').update({ balance: currentBal - price }).eq('id', currentUser.id);
-                currentUser.balance = currentBal - price;
-            }
-
-            const { data: accData } = await client.from('accounts').update({ sold: true }).eq('id', id).select().single();
-            
-            if (!currentUser.purchased) currentUser.purchased = [];
-            currentUser.purchased.unshift({
-                id: accData.id,
-                title: accData.title,
-                user: accData.username_acc,
-                pass: accData.password_acc,
-                price: accData.price,
-                time: new Date().toLocaleString('vi-VN')
-            });
-
-            localStorage.setItem(
+            if (!
