@@ -10,8 +10,8 @@ module.exports = async (req, res) => {
     return res.status(405).json({ status: 405, message: 'Method Not Allowed' });
   }
 
-  // Tự động phân tích dữ liệu gửi lên dù là JSON hay Form
-  let body = req.body;
+  // Đọc dữ liệu gửi lên từ Byethost
+  let body = req.body || {};
   if (typeof body === 'string' && body.trim() !== '') {
     try {
       body = JSON.parse(body);
@@ -23,20 +23,20 @@ module.exports = async (req, res) => {
     }
   }
 
-  const { telco, code, serial, amount, request_id } = body || {};
+  const { telco, code, serial, amount, request_id } = body;
 
   if (!code || !serial) {
     return res.json({ 
       status: 100, 
-      message: 'Proxy nhận thiếu thông tin thẻ', 
-      debug_body: body 
+      message: 'Proxy lỗi: Không nhận được mã thẻ hoặc seri từ Byethost',
+      received: body 
     });
   }
 
   const partner_id = '40469308254';
   const partner_key = '0b4616c5b4a4d5f9fa38473041c0acd0';
 
-  // Tạo chữ ký bảo mật MD5 chuẩn: partner_key + code + serial
+  // Tạo chữ ký MD5
   const sign = crypto.createHash('md5').update(partner_key + code + serial).digest('hex');
 
   const params = new URLSearchParams({
@@ -61,6 +61,6 @@ module.exports = async (req, res) => {
     const data = await response.text();
     return res.status(200).send(data);
   } catch (error) {
-    return res.status(500).json({ status: 500, message: 'Proxy Error: ' + error.message });
+    return res.status(500).json({ status: 500, message: 'Proxy Fetch Error: ' + error.message });
   }
 };
