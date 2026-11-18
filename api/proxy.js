@@ -10,30 +10,33 @@ module.exports = async (req, res) => {
     return res.status(405).json({ status: 405, message: 'Method Not Allowed' });
   }
 
+  // Tự động phân tích dữ liệu gửi lên dù là JSON hay Form
   let body = req.body;
-  if (typeof body === 'string') {
+  if (typeof body === 'string' && body.trim() !== '') {
     try {
       body = JSON.parse(body);
     } catch (e) {
-      const parsed = new URLSearchParams(body);
-      body = Object.fromEntries(parsed.entries());
+      try {
+        const parsed = new URLSearchParams(body);
+        body = Object.fromEntries(parsed.entries());
+      } catch (err) {}
     }
   }
 
-  // --- BƯỚC DEBUG: Trả về luôn dữ liệu Vercel nhận được để kiểm tra ---
   const { telco, code, serial, amount, request_id } = body || {};
 
   if (!code || !serial) {
     return res.json({ 
       status: 100, 
-      message: 'Proxy nhận thiếu dữ liệu từ InfinityFree', 
-      received_body: body,
-      raw_req_body: req.body 
+      message: 'Proxy nhận thiếu thông tin thẻ', 
+      debug_body: body 
     });
   }
 
   const partner_id = '40469308254';
   const partner_key = '0b4616c5b4a4d5f9fa38473041c0acd0';
+
+  // Tạo chữ ký bảo mật MD5 chuẩn: partner_key + code + serial
   const sign = crypto.createHash('md5').update(partner_key + code + serial).digest('hex');
 
   const params = new URLSearchParams({
