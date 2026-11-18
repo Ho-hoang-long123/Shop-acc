@@ -10,7 +10,6 @@ module.exports = async (req, res) => {
     return res.status(405).json({ status: 405, message: 'Method Not Allowed' });
   }
 
-  // Đọc dữ liệu gửi lên từ Byethost
   let body = req.body || {};
   if (typeof body === 'string' && body.trim() !== '') {
     try {
@@ -26,18 +25,18 @@ module.exports = async (req, res) => {
   const { telco, code, serial, amount, request_id } = body;
 
   if (!code || !serial) {
-    return res.json({ 
-      status: 100, 
-      message: 'Proxy lỗi: Không nhận được mã thẻ hoặc seri từ Byethost',
-      received: body 
-    });
+    return res.json({ status: 100, message: 'Proxy lỗi: Thiếu mã thẻ hoặc seri' });
   }
 
+  // --- THÔNG TIN TÀI KHOẢN GACHTHE1S CỦA BẠN ---
   const partner_id = '40469308254';
   const partner_key = '0b4616c5b4a4d5f9fa38473041c0acd0';
+  const command = 'charging';
 
-  // Tạo chữ ký MD5
-  const sign = crypto.createHash('md5').update(partner_key + code + serial).digest('hex');
+  // Cách tạo chữ ký chuẩn: partner_key + code + serial
+  // (Nếu API gachthe1s đổi chuẩn, ta nối chuỗi theo đúng tài liệu tích hợp của họ)
+  const rawSign = partner_key + code + serial;
+  const sign = crypto.createHash('md5').update(rawSign).digest('hex');
 
   const params = new URLSearchParams({
     telco: telco,
@@ -47,7 +46,7 @@ module.exports = async (req, res) => {
     request_id: request_id,
     partner_id: partner_id,
     sign: sign,
-    command: 'charging'
+    command: command
   });
 
   try {
@@ -61,6 +60,6 @@ module.exports = async (req, res) => {
     const data = await response.text();
     return res.status(200).send(data);
   } catch (error) {
-    return res.status(500).json({ status: 500, message: 'Proxy Fetch Error: ' + error.message });
+    return res.status(500).json({ status: 500, message: 'Proxy Error: ' + error.message });
   }
 };
