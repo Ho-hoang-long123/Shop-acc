@@ -11,8 +11,8 @@ jobs:
     steps:
       - name: Call card verification endpoint
         env:
-          CHECK_URL: ${{https://shopmunbell.byethost32.com/cron_duyet_the.php}}
-          CHECK_KEY: ${{mnb_9xK4pL2wQ8zR7vT5nY3mH6jB1cF0dG }}
+          CHECK_URL: ${{ secrets.CARD_CHECK_URL }}
+          CHECK_KEY: ${{ secrets.CARD_CHECK_KEY }}
         run: |
           if [ -z "$CHECK_URL" ] || [ -z "$CHECK_KEY" ]; then
             echo "Thiếu CARD_CHECK_URL hoặc CARD_CHECK_KEY trong GitHub Secrets"
