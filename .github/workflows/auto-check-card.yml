@@ -8,9 +8,9 @@ on:
 jobs:
   check-cards:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     steps:
-      - name: Poll card verification endpoint
+      - name: Fast poll card verification endpoint
         env:
           CHECK_URL: ${{ secrets.CARD_CHECK_URL }}
           CHECK_KEY: ${{ secrets.CARD_CHECK_KEY }}
@@ -22,26 +22,24 @@ jobs:
             exit 1
           fi
 
-          INTERVAL=60
-          MAX_LOOPS=15
+          INTERVAL=15
+          MAX_LOOPS=56
 
           for ((i=1; i<=MAX_LOOPS; i++)); do
-            echo "=== Lượt $i/$MAX_LOOPS ($(date -u '+%Y-%m-%d %H:%M:%S UTC')) ==="
+            echo "=== Lượt $i/$MAX_LOOPS ($(date -u '+%H:%M:%S UTC')) ==="
             BODY_FILE="$(mktemp)"
-            HDR_FILE="$(mktemp)"
 
             set +e
             HTTP_CODE=$(curl -sS -L \
-              --connect-timeout 15 \
-              --max-time 30 \
-              -D "$HDR_FILE" \
+              --connect-timeout 6 \
+              --max-time 12 \
               -o "$BODY_FILE" \
               -w "%{http_code}" \
               -X POST "$CHECK_URL" \
               -H "X-Cron-Key: $CHECK_KEY" \
               -H "Accept: application/json" \
               -H "Content-Type: application/x-www-form-urlencoded" \
-              -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36" \
+              -H "User-Agent: Mozilla/5.0" \
               --data-urlencode "key=$CHECK_KEY")
             CURL_EXIT=$?
             set -e
@@ -49,8 +47,7 @@ jobs:
             echo "curl_exit=$CURL_EXIT | http_code=$HTTP_CODE"
             cat "$BODY_FILE" || true
             echo ""
-
-            rm -f "$BODY_FILE" "$HDR_FILE"
+            rm -f "$BODY_FILE"
 
             if [ "$i" -lt "$MAX_LOOPS" ]; then
               sleep "$INTERVAL"
