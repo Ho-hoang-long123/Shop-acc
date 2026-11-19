@@ -14,12 +14,61 @@ jobs:
           CHECK_URL: ${{ secrets.CARD_CHECK_URL }}
           CHECK_KEY: ${{ secrets.CARD_CHECK_KEY }}
         run: |
-          if [ -z "$CHECK_URL" ] || [ -z "$CHECK_KEY" ]; then
+          set -euo pipefail
+
+          if [ -z "${CHECK_URL:-}" ] || [ -z "${CHECK_KEY:-}" ]; then
             echo "Thiếu CARD_CHECK_URL hoặc CARD_CHECK_KEY trong GitHub Secrets"
             exit 1
           fi
-          curl -fsSL -X POST "$CHECK_URL" \
-            -H "X-Cron-Key: $CHECK_KEY" \
-            -H "Accept: application/json" \
-            --max-time 30
-            
+
+          BODY_FILE="$(mktemp)"
+          HDR_FILE="$(mktemp)"
+          trap 'rm -f "$BODY_FILE" "$HDR_FILE"' EXIT
+
+          HTTP_CODE=""
+          CURL_EXIT=0
+
+          for attempt in 1 2 3; do
+            echo "--- Lần thử $attempt/3 ---"
+            set +e
+            HTTP_CODE=$(curl -sS -L \
+              --retry 2 \
+              --retry-delay 3 \
+              --connect-timeout 15 \
+              --max-time 30 \
+              -D "$HDR_FILE" \
+              -o "$BODY_FILE" \
+              -w "%{http_code}" \
+              -X POST "$CHECK_URL" \
+              -H "X-Cron-Key: $CHECK_KEY" \
+              -H "Accept: application/json" \
+              -H "Content-Type: application/x-www-form-urlencoded" \
+              -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36" \
+              --data-urlencode "key=$CHECK_KEY")
+            CURL_EXIT=$?
+            set -e
+
+            echo "curl_exit=$CURL_EXIT | http_code=$HTTP_CODE"
+            if [ "$CURL_EXIT" -eq 0 ] && [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+              break
+            fi
+            sleep 5
+          done
+
+          echo "=== Response Headers ==="
+          cat "$HDR_FILE" || true
+
+          echo "=== Response Body ==="
+          cat "$BODY_FILE" || true
+          echo ""
+
+          if [ "$CURL_EXIT" -ne 0 ]; then
+            echo "Lỗi kết nối/SSL từ phía máy chủ đích (exit code $CURL_EXIT)."
+            exit 1
+          fi
+
+          if [ "$HTTP_CODE" -lt 200 ] || [ "$HTTP_CODE" -ge 300 ]; then
+            echo "Máy chủ trả về mã HTTP không thành công: $HTTP_CODE"
+            exit 1
+          fi
+          
