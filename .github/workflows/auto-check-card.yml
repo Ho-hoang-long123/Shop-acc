@@ -8,8 +8,9 @@ on:
 jobs:
   check-cards:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - name: Call card verification endpoint
+      - name: Poll card verification endpoint
         env:
           CHECK_URL: ${{ secrets.CARD_CHECK_URL }}
           CHECK_KEY: ${{ secrets.CARD_CHECK_KEY }}
@@ -21,19 +22,16 @@ jobs:
             exit 1
           fi
 
-          BODY_FILE="$(mktemp)"
-          HDR_FILE="$(mktemp)"
-          trap 'rm -f "$BODY_FILE" "$HDR_FILE"' EXIT
+          INTERVAL=60
+          MAX_LOOPS=15
 
-          HTTP_CODE=""
-          CURL_EXIT=0
+          for ((i=1; i<=MAX_LOOPS; i++)); do
+            echo "=== Lượt $i/$MAX_LOOPS ($(date -u '+%Y-%m-%d %H:%M:%S UTC')) ==="
+            BODY_FILE="$(mktemp)"
+            HDR_FILE="$(mktemp)"
 
-          for attempt in 1 2 3; do
-            echo "--- Lần thử $attempt/3 ---"
             set +e
             HTTP_CODE=$(curl -sS -L \
-              --retry 2 \
-              --retry-delay 3 \
               --connect-timeout 15 \
               --max-time 30 \
               -D "$HDR_FILE" \
@@ -49,26 +47,13 @@ jobs:
             set -e
 
             echo "curl_exit=$CURL_EXIT | http_code=$HTTP_CODE"
-            if [ "$CURL_EXIT" -eq 0 ] && [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
-              break
+            cat "$BODY_FILE" || true
+            echo ""
+
+            rm -f "$BODY_FILE" "$HDR_FILE"
+
+            if [ "$i" -lt "$MAX_LOOPS" ]; then
+              sleep "$INTERVAL"
             fi
-            sleep 5
           done
-
-          echo "=== Response Headers ==="
-          cat "$HDR_FILE" || true
-
-          echo "=== Response Body ==="
-          cat "$BODY_FILE" || true
-          echo ""
-
-          if [ "$CURL_EXIT" -ne 0 ]; then
-            echo "Lỗi kết nối/SSL từ phía máy chủ đích (exit code $CURL_EXIT)."
-            exit 1
-          fi
-
-          if [ "$HTTP_CODE" -lt 200 ] || [ "$HTTP_CODE" -ge 300 ]; then
-            echo "Máy chủ trả về mã HTTP không thành công: $HTTP_CODE"
-            exit 1
-          fi
           
