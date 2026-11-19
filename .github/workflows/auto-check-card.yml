@@ -1,0 +1,25 @@
+name: Auto Check Cards
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  check-cards:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call card verification endpoint
+        env:
+          CHECK_URL: ${{ secrets.CARD_CHECK_URL }}
+          CHECK_KEY: ${{ secrets.CARD_CHECK_KEY }}
+        run: |
+          if [ -z "$CHECK_URL" ] || [ -z "$CHECK_KEY" ]; then
+            echo "Thiếu CARD_CHECK_URL hoặc CARD_CHECK_KEY trong GitHub Secrets"
+            exit 1
+          fi
+          curl -fsSL -X POST "$CHECK_URL" \
+            -H "X-Cron-Key: $CHECK_KEY" \
+            -H "Accept: application/json" \
+            --max-time 30
+            
