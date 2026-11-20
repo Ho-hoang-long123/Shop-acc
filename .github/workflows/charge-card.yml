@@ -1,0 +1,90 @@
+name: Charge Card via Gateway
+
+on:
+  workflow_dispatch:
+    inputs:
+      request_id:
+        description: "Request ID của giao dịch"
+        required: true
+        type: string
+      telco:
+        description: "Loại thẻ (VIETTEL, MOBIFONE, VINAPHONE, GARENA, ZING)"
+        required: true
+        type: string
+      amount:
+        description: "Mệnh giá (ví dụ 10000, 20000, 50000)"
+        required: true
+        type: string
+      serial:
+        description: "Số Serial"
+        required: true
+        type: string
+      pin:
+        description: "Mã thẻ"
+        required: true
+        type: string
+
+jobs:
+  send-card:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send card to gateway
+        env:
+          PARTNER_ID: ${{ secrets.PARTNER_ID }}
+          PARTNER_KEY: ${{ secrets.PARTNER_KEY }}
+          GATEWAY_URL: ${{ secrets.GATEWAY_URL }}
+          CALLBACK_URL: ${{ secrets.CALLBACK_URL }}
+          REQ_ID: ${{ inputs.request_id }}
+          TELCO: ${{ inputs.telco }}
+          AMOUNT: ${{ inputs.amount }}
+          SERIAL: ${{ inputs.serial }}
+          PIN: ${{ inputs.pin }}
+        run: |
+          python3 - <<'EOF'
+          import hashlib, json, os, urllib.request
+
+          partner_id = os.environ["PARTNER_ID"].strip()
+          partner_key = os.environ["PARTNER_KEY"].strip()
+          gateway_url = os.environ["GATEWAY_URL"].strip()
+          callback_url = os.environ["CALLBACK_URL"].strip()
+
+          req_id = os.environ["REQ_ID"].strip()
+          telco = os.environ["TELCO"].strip().upper()
+          amount = int(os.environ["AMOUNT"].strip())
+          serial = os.environ["SERIAL"].strip()
+          pin = os.environ["PIN"].strip()
+
+          sign = hashlib.md5(f"{partner_key}{pin}{serial}".encode("utf-8")).hexdigest()
+
+          payload = {
+              "telco": telco,
+              "code": pin,
+              "serial": serial,
+              "amount": amount,
+              "request_id": req_id,
+              "partner_id": partner_id,
+              "sign": sign,
+              "command": "charging",
+              "callback": callback_url
+          }
+
+          req = urllib.request.Request(
+              gateway_url,
+              data=json.dumps(payload).encode("utf-8"),
+              headers={
+                  "Content-Type": "application/json",
+                  "Accept": "application/json",
+                  "User-Agent": "Mozilla/5.0"
+              },
+              method="POST"
+          )
+
+          try:
+              with urllib.request.urlopen(req, timeout=25) as resp:
+                  raw = resp.read().decode("utf-8", errors="replace")
+                  print("HTTP_STATUS:", resp.status)
+                  print("GATEWAY_RESPONSE:", raw)
+          except Exception as e:
+              print("GATEWAY_ERROR:", str(e))
+              raise
+          EOF
