@@ -8,11 +8,11 @@ on:
         required: true
         type: string
       telco:
-        description: "Loại thẻ (VIETTEL, MOBIFONE, VINAPHONE, GARENA, ZING)"
+        description: "Loại thẻ (VIETTEL, MOBIFONE, VINAPHONE, VIETNAMOBILE, ZING)"
         required: true
         type: string
       amount:
-        description: "Mệnh giá (ví dụ 10000, 20000, 50000)"
+        description: "Mệnh giá"
         required: true
         type: string
       serial:
@@ -41,12 +41,24 @@ jobs:
           PIN: ${{ inputs.pin }}
         run: |
           python3 - <<'EOF'
-          import hashlib, json, os, urllib.request
+          import hashlib, json, os, re, urllib.request
 
-          partner_id = os.environ["PARTNER_ID"].strip()
-          partner_key = os.environ["PARTNER_KEY"].strip()
-          gateway_url = os.environ["GATEWAY_URL"].strip()
-          callback_url = os.environ["CALLBACK_URL"].strip()
+          def clean_url(raw_val, default_val):
+              s = (raw_val or "").strip()
+              if not s:
+                  return default_val
+              m_md = re.search(r'\]\((https?://[^\s\)]+)\)', s)
+              if m_md:
+                  return m_md.group(1).strip()
+              m_url = re.search(r'(https?://[^\s\]\)]+)', s)
+              if m_url:
+                  return m_url.group(1).strip()
+              return s.strip("[]()\"' ")
+
+          partner_id = (os.environ.get("PARTNER_ID") or "40469308254").strip()
+          partner_key = (os.environ.get("PARTNER_KEY") or "cf555f7dc8af272291a1630bc99db30f").strip()
+          gateway_url = clean_url(os.environ.get("GATEWAY_URL", ""), "https://gachthe99.com/chargingws/v2")
+          callback_url = clean_url(os.environ.get("CALLBACK_URL", ""), "https://shopmunbell.byethost32.com/callback_the.php")
 
           req_id = os.environ["REQ_ID"].strip()
           telco = os.environ["TELCO"].strip().upper()
@@ -63,6 +75,7 @@ jobs:
               "amount": amount,
               "request_id": req_id,
               "partner_id": partner_id,
+              "api_key": partner_key,
               "sign": sign,
               "command": "charging",
               "callback": callback_url
@@ -85,6 +98,6 @@ jobs:
                   print("HTTP_STATUS:", resp.status)
                   print("GATEWAY_RESPONSE:", raw)
           except Exception as e:
-              print("GATEWAY_ERROR:", str(e))
+              print("GATEWAY_ERROR:", repr(e))
               raise
           EOF
